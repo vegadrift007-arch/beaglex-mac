@@ -1,0 +1,284 @@
+[
+  {
+    "id": "xcode_derived_data",
+    "name": "Xcode DerivedData",
+    "description": "Xcode build cache. Safe to delete; rebuilds automatically on next compile.",
+    "category": "developer",
+    "safety": "safe",
+    "paths": ["~/Library/Developer/Xcode/DerivedData/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "xcode_archives",
+    "name": "Xcode Archives",
+    "description": "Old build archives. Caution: contains dSYMs and IPAs you may want to keep.",
+    "category": "developer",
+    "safety": "caution",
+    "paths": ["~/Library/Developer/Xcode/Archives/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "ios_device_support",
+    "name": "Xcode iOS DeviceSupport",
+    "description": "Device support files for old iOS versions. Re-downloaded on next attach.",
+    "category": "developer",
+    "safety": "caution",
+    "paths": ["~/Library/Developer/Xcode/iOS DeviceSupport/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "core_simulator",
+    "name": "Xcode Simulator caches",
+    "description": "Old simulator runtime data. Risky: deletes installed simulator apps and their state.",
+    "category": "developer",
+    "safety": "risky",
+    "paths": ["~/Library/Developer/CoreSimulator/Caches/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "homebrew_downloads",
+    "name": "Homebrew Downloads",
+    "description": "Cached formula downloads (.tar.gz/.bottle).",
+    "category": "developer",
+    "safety": "safe",
+    "paths": ["~/Library/Caches/Homebrew/downloads/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "npm_cache",
+    "name": "npm cache",
+    "description": "npm package cache.",
+    "category": "developer",
+    "safety": "safe",
+    "paths": ["~/.npm/_cacache/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "yarn_cache",
+    "name": "Yarn cache",
+    "description": "Yarn package cache.",
+    "category": "developer",
+    "safety": "safe",
+    "paths": ["~/Library/Caches/Yarn/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "pnpm_cache",
+    "name": "pnpm cache",
+    "description": "pnpm content-addressed store.",
+    "category": "developer",
+    "safety": "caution",
+    "paths": ["~/Library/pnpm/store/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "pip_cache",
+    "name": "pip cache",
+    "description": "Python package wheel cache.",
+    "category": "developer",
+    "safety": "safe",
+    "paths": ["~/Library/Caches/pip/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "gradle_cache",
+    "name": "Gradle cache",
+    "description": "Gradle dependency + build cache.",
+    "category": "developer",
+    "safety": "safe",
+    "paths": ["~/.gradle/caches/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "maven_repo",
+    "name": "Maven local repo",
+    "description": "Maven dependency cache.",
+    "category": "developer",
+    "safety": "caution",
+    "paths": ["~/.m2/repository/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "go_module_cache",
+    "name": "Go module cache",
+    "description": "Go module download cache.",
+    "category": "developer",
+    "safety": "safe",
+    "paths": ["~/go/pkg/mod/cache/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "rust_target",
+    "name": "Rust cargo cache",
+    "description": "Cargo registry cache and source.",
+    "category": "developer",
+    "safety": "safe",
+    "paths": ["~/.cargo/registry/cache/*", "~/.cargo/registry/src/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "docker_logs",
+    "name": "Docker Desktop logs",
+    "description": "Docker Desktop log files.",
+    "category": "developer",
+    "safety": "safe",
+    "paths": ["~/Library/Containers/com.docker.docker/Data/log/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "chrome_cache",
+    "name": "Chrome cache",
+    "description": "Browser cache; cookies/history are NOT touched.",
+    "category": "browser",
+    "safety": "safe",
+    "paths": [
+      "~/Library/Caches/Google/Chrome/*",
+      "~/Library/Application Support/Google/Chrome/Default/Cache/Cache_Data/*"
+    ],
+    "requiresHelper": false
+  },
+  {
+    "id": "safari_cache",
+    "name": "Safari cache",
+    "description": "Safari resource cache.",
+    "category": "browser",
+    "safety": "safe",
+    "paths": [
+      "~/Library/Caches/com.apple.Safari/*",
+      "~/Library/Caches/com.apple.SafariViewService/*"
+    ],
+    "requiresHelper": false
+  },
+  {
+    "id": "firefox_cache",
+    "name": "Firefox cache",
+    "description": "Firefox cache2 directory.",
+    "category": "browser",
+    "safety": "safe",
+    "paths": ["~/Library/Caches/Firefox/Profiles/*/cache2/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "arc_cache",
+    "name": "Arc browser cache",
+    "description": "Arc browser cache.",
+    "category": "browser",
+    "safety": "safe",
+    "paths": ["~/Library/Caches/company.thebrowser.Browser/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "quicktime_cache",
+    "name": "QuickTime caches",
+    "description": "QuickTime Player caches.",
+    "category": "media",
+    "safety": "safe",
+    "paths": ["~/Library/Caches/com.apple.QuickTimePlayerX/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "quicklook_thumbnails",
+    "name": "Quick Look thumbnails",
+    "description": "Thumbnail cache for Finder previews.",
+    "category": "media",
+    "safety": "safe",
+    "paths": ["~/Library/Caches/com.apple.QuickLook.thumbnailcache/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "slack_cache",
+    "name": "Slack cache",
+    "description": "Slack desktop cache (rare cases require re-login if tokens cached here).",
+    "category": "appCache",
+    "safety": "caution",
+    "paths": [
+      "~/Library/Application Support/Slack/Cache/*",
+      "~/Library/Application Support/Slack/Service Worker/CacheStorage/*"
+    ],
+    "requiresHelper": false
+  },
+  {
+    "id": "discord_cache",
+    "name": "Discord cache",
+    "description": "Discord renderer cache.",
+    "category": "appCache",
+    "safety": "safe",
+    "paths": ["~/Library/Application Support/discord/Cache/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "spotify_cache",
+    "name": "Spotify cache",
+    "description": "Spotify track cache and PersistentCache.",
+    "category": "appCache",
+    "safety": "safe",
+    "paths": [
+      "~/Library/Caches/com.spotify.client/*",
+      "~/Library/Application Support/Spotify/PersistentCache/*"
+    ],
+    "requiresHelper": false
+  },
+  {
+    "id": "telegram_cache",
+    "name": "Telegram cache",
+    "description": "Telegram Desktop's local media cache.",
+    "category": "appCache",
+    "safety": "safe",
+    "paths": ["~/Library/Group Containers/*.ru.keepcoder.Telegram/stable/account-*/postbox/media_cache/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "vscode_workspaces",
+    "name": "VS Code workspace storage",
+    "description": "VS Code per-workspace storage. Risky: loses some unsaved IDE state.",
+    "category": "appCache",
+    "safety": "risky",
+    "paths": ["~/Library/Application Support/Code/User/workspaceStorage/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "system_logs",
+    "name": "User Logs (>7 days)",
+    "description": "ASL/log files older than 7 days. Recent logs are kept.",
+    "category": "system",
+    "safety": "safe",
+    "paths": ["~/Library/Logs/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "crash_reports",
+    "name": "Crash Reports",
+    "description": "Diagnostic reports older than 7 days.",
+    "category": "system",
+    "safety": "safe",
+    "paths": ["~/Library/Logs/DiagnosticReports/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "recent_items",
+    "name": "Recent files lists",
+    "description": "macOS shared file lists (Recents).",
+    "category": "system",
+    "safety": "caution",
+    "paths": ["~/Library/Application Support/com.apple.sharedfilelist/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "saved_app_state",
+    "name": "Saved Application State",
+    "description": "Apps will not restore window positions on next launch.",
+    "category": "system",
+    "safety": "caution",
+    "paths": ["~/Library/Saved Application State/*"],
+    "requiresHelper": false
+  },
+  {
+    "id": "trash",
+    "name": "Empty Trash",
+    "description": "Empty the user's Trash bin.",
+    "category": "trash",
+    "safety": "safe",
+    "paths": ["~/.Trash/*"],
+    "requiresHelper": false
+  }
+]
