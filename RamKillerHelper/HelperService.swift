@@ -2,7 +2,7 @@ import Foundation
 import Shared
 
 final class HelperService: NSObject, NSXPCListenerDelegate, HelperProtocol {
-    static let version = "0.1.0"
+    static let version = "0.2.0"
 
     func listener(_ listener: NSXPCListener, shouldAcceptNewConnection conn: NSXPCConnection) -> Bool {
         // For self-use: accept all connections. Hardening (code-sign requirement validation)
@@ -45,6 +45,22 @@ final class HelperService: NSObject, NSXPCListenerDelegate, HelperProtocol {
             case .denied(let r):          return .denied(reason: r)
             case .failed(let e):          return .failed(error: e)
             }
+        case .unloadLaunchPlist(let path):
+            return adapt(LaunchItemOperation.unload(path: path))
+        case .loadLaunchPlist(let path):
+            return adapt(LaunchItemOperation.load(path: path))
+        case .renamePlist(let from, let to):
+            return adapt(LaunchItemOperation.rename(from: from, to: to))
+        case .deletePlist(let path):
+            return adapt(LaunchItemOperation.delete(path: path))
+        }
+    }
+
+    private func adapt(_ outcome: LaunchItemOperation.Outcome) -> HelperResult {
+        switch outcome {
+        case .success:        return .success
+        case .denied(let r):  return .denied(reason: r)
+        case .failed(let e):  return .failed(error: e)
         }
     }
 }
