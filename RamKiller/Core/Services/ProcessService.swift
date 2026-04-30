@@ -5,27 +5,55 @@ public final class ProcessService {
     public init() {}
 
     public func readAll() -> [ProcessReading] {
-        let pids = listPIDs()
-        return pids.compactMap { reading(for: $0) }
+        let kinfos = listAllKinfoProcesses()
+        return kinfos.map { kinfo in
+            let pid = kinfo.kp_proc.p_pid
+            // Try proc_pidinfo first for full RSS data (only works for own user)
+            if let detailed = reading(for: pid) { return detailed }
+            // Fallback: minimal data from kinfo_proc (works for all processes)
+            return readingFromKinfo(kinfo)
+        }
     }
 
     public func topByRSS(limit: Int) -> [ProcessReading] {
         readAll().sorted { $0.rssBytes > $1.rssBytes }.prefix(limit).map { $0 }
     }
 
-    // MARK: - libproc bridge
+    // MARK: - sysctl-based enumeration (works for all processes, no root needed)
 
-    private func listPIDs() -> [pid_t] {
-        let bufferSize = proc_listallpids(nil, 0)
-        guard bufferSize > 0 else { return [] }
-        let count = Int(bufferSize) / MemoryLayout<pid_t>.stride
-        var pids = [pid_t](repeating: 0, count: count)
-        let written = pids.withUnsafeMutableBufferPointer {
-            proc_listallpids($0.baseAddress, Int32($0.count * MemoryLayout<pid_t>.stride))
-        }
-        guard written > 0 else { return [] }
-        return Array(pids.prefix(Int(written) / MemoryLayout<pid_t>.stride)).filter { $0 > 0 }
+    private func listAllKinfoProcesses() -> [kinfo_proc] {
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0]
+        var size: Int = 0
+        guard sysctl(&mib, UInt32(mib.count), nil, &size, nil, 0) == 0, size > 0 else { return [] }
+        let count = size / MemoryLayout<kinfo_proc>.stride
+        var procs = [kinfo_proc](repeating: kinfo_proc(), count: count)
+        var actualSize = size
+        guard sysctl(&mib, UInt32(mib.count), &procs, &actualSize, nil, 0) == 0 else { return [] }
+        let actualCount = actualSize / MemoryLayout<kinfo_proc>.stride
+        return Array(procs.prefix(actualCount)).filter { $0.kp_proc.p_pid > 0 }
     }
+
+    private func readingFromKinfo(_ info: kinfo_proc) -> ProcessReading {
+        var info = info
+        let pid = info.kp_proc.p_pid
+        let name = withUnsafePointer(to: &info.kp_proc.p_comm) {
+            $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXCOMLEN) + 1) {
+                String(cString: $0)
+            }
+        }
+        let uid = info.kp_eproc.e_ucred.cr_uid
+        return ProcessReading(
+            id: pid, pid: pid, name: name,
+            bundleId: nil,
+            executablePath: nil,
+            user: userName(uid: uid),
+            rssBytes: 0,                                  // unknown without privileged access
+            cpuPercent: 0,
+            startedAt: Date.distantPast
+        )
+    }
+
+    // MARK: - libproc bridge (full data — only works for own user)
 
     private func reading(for pid: pid_t) -> ProcessReading? {
         var taskInfo = proc_taskallinfo()
@@ -38,7 +66,6 @@ public final class ProcessService {
         }
         let startSec = TimeInterval(taskInfo.pbsd.pbi_start_tvsec)
         let started = Date(timeIntervalSince1970: startSec)
-        let cpu = cpuPercent(for: pid)
 
         let path = executablePath(for: pid)
         let user = userName(uid: taskInfo.pbsd.pbi_uid)
@@ -51,19 +78,12 @@ public final class ProcessService {
             executablePath: path,
             user: user,
             rssBytes: rss,
-            cpuPercent: cpu,
+            cpuPercent: 0,
             startedAt: started
         )
     }
 
-    private func cpuPercent(for pid: pid_t) -> Double {
-        // Cumulative CPU is available; "percent" requires deltas.
-        // Phase 1 reports 0; revisit in Phase 2 if Smart Kill banner needs it.
-        return 0
-    }
-
     private func executablePath(for pid: pid_t) -> String? {
-        // PROC_PIDPATHINFO_MAXSIZE is MAXPATHLEN*4 = 4096; constant not exposed in Swift.
         var buffer = [CChar](repeating: 0, count: 4096)
         let n = proc_pidpath(pid, &buffer, UInt32(buffer.count))
         guard n > 0 else { return nil }
