@@ -5,60 +5,108 @@ struct MenuBarView: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let m = coordinator.latestMemory {
-                row("Used", value: ByteFormat.gb(m.usedBytes) + " / " + ByteFormat.gb(m.totalBytes))
-                row("Unused", value: ByteFormat.gb(m.unusedBytes), badge: pressureBadge(m.pressureLevel))
-                row("Compressor", value: ByteFormat.gb(m.compressorBytes))
-                if m.swapOutPagesPerSec > 0 {
-                    row("Swap out", value: "\(Int(m.swapOutPagesPerSec)) p/s", badge: AnyView(Text("⚠️")))
+        VStack(alignment: .leading, spacing: 12) {
+            // header
+            HStack {
+                Text("RamKiller").font(Theme.headline(15))
+                Spacer()
+                if let m = coordinator.latestMemory {
+                    pressureBadge(m.pressureLevel)
                 }
-            } else {
-                Text("Sampling…").foregroundStyle(.secondary)
             }
 
-            Divider()
-
-            if !coordinator.latestProcesses.isEmpty {
-                Text("Top 5 by RSS").font(.caption).foregroundStyle(.secondary)
-                ForEach(coordinator.latestProcesses.prefix(5)) { p in
-                    HStack {
-                        Text(p.name).lineLimit(1).truncationMode(.tail)
-                        Spacer()
-                        Text(ByteFormat.mb(p.rssBytes)).foregroundStyle(.secondary)
+            // stats
+            if let m = coordinator.latestMemory {
+                VStack(spacing: 8) {
+                    statRow("Used", value: ByteFormat.gb(m.usedBytes), accent: Theme.accent, fraction: m.usedPercent / 100)
+                    statRow("Unused", value: ByteFormat.gb(m.unusedBytes), accent: pressureColor(m.pressureLevel))
+                    statRow("Compressor", value: ByteFormat.gb(m.compressorBytes), accent: Theme.warn)
+                    if m.swapOutPagesPerSec > 0 {
+                        statRow("Swap out", value: "\(Int(m.swapOutPagesPerSec)) p/s", accent: Theme.danger)
                     }
-                    .font(.caption)
                 }
-                Divider()
+            } else {
+                Text("Sampling…").foregroundStyle(Theme.mute)
+            }
+
+            Divider().background(Theme.line)
+
+            // top processes
+            if !coordinator.latestProcesses.isEmpty {
+                Text("Top processes").vqEyebrow()
+                VStack(spacing: 6) {
+                    ForEach(coordinator.latestProcesses.prefix(5)) { p in
+                        HStack {
+                            Text(p.name)
+                                .font(Theme.bodyText)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                            Spacer()
+                            Text(ByteFormat.mb(p.rssBytes))
+                                .font(Theme.mono(12))
+                                .foregroundStyle(Theme.inkSoft)
+                        }
+                    }
+                }
+
+                Divider().background(Theme.line)
             }
 
             PurgeButton(style: .compact)
 
-            Divider()
-
-            Button("Open Main Window") { openWindow(id: "main") }
-            Button("Quit") { NSApplication.shared.terminate(nil) }
-                .keyboardShortcut("q")
+            HStack {
+                Button("Open Window") { openWindow(id: "main") }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(Theme.inkSoft)
+                Spacer()
+                Button("Quit") { NSApplication.shared.terminate(nil) }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(Theme.mute)
+                    .keyboardShortcut("q")
+            }
+            .font(Theme.caption)
         }
-        .padding(12)
-        .frame(width: 280)
+        .padding(14)
+        .frame(width: 300)
+        .background(Theme.bg)
+        .preferredColorScheme(.dark)
     }
 
-    private func row(_ title: String, value: String, badge: AnyView? = nil) -> some View {
-        HStack {
-            Text(title).foregroundStyle(.secondary)
-            Spacer()
-            Text(value).monospacedDigit()
-            if let badge { badge }
+    private func statRow(_ title: String, value: String, accent: Color, fraction: Double? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(title).font(Theme.caption).foregroundStyle(Theme.mute)
+                Spacer()
+                Text(value).font(Theme.mono(13)).foregroundStyle(accent)
+            }
+            if let f = fraction {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Theme.line)
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(accent)
+                            .frame(width: max(2, geo.size.width * f))
+                    }
+                }
+                .frame(height: 4)
+            }
         }
-        .font(.body)
     }
 
-    private func pressureBadge(_ level: Int) -> AnyView {
+    private func pressureBadge(_ level: Int) -> some View {
         switch level {
-        case 0: return AnyView(Text("🟢").font(.caption))
-        case 1: return AnyView(Text("🟡").font(.caption))
-        default: return AnyView(Text("🔴").font(.caption))
+        case 0: return AnyView(VQTag(text: "Healthy", color: Theme.accent))
+        case 1: return AnyView(VQTag(text: "Warn", color: Theme.warn))
+        default: return AnyView(VQTag(text: "Critical", color: Theme.danger))
+        }
+    }
+
+    private func pressureColor(_ level: Int) -> Color {
+        switch level {
+        case 0: return Theme.accent
+        case 1: return Theme.warn
+        default: return Theme.danger
         }
     }
 }

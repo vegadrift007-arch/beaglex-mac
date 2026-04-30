@@ -24,34 +24,37 @@ struct UninstallerView: View {
                         selection = info.id
                     }
                 }
-                .padding(.horizontal, 8)
-                .padding(.top, 8)
+                .padding(8)
+
                 AppListView(apps: apps, selection: $selection)
             }
             .frame(minWidth: 320, idealWidth: 360, maxWidth: 400)
             .frame(maxHeight: .infinity)
+            .background(Theme.bg2)
 
-            Divider()
+            Divider().background(Theme.line)
 
             Group {
                 if let app = selectedApp {
                     AppDetailView(app: app).id(app.id)
                 } else if loading {
-                    ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ContentUnavailableView("Select an app", systemImage: "app.dashed")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Theme.bg)
         }
         .navigationTitle("Uninstaller")
+        .preferredColorScheme(.dark)
         .task { await loadApps() }
     }
 
     private func loadApps() async {
         loading = true
-        // Run on background thread to avoid blocking the main thread (each app scans its bundle for size)
         let result = await Task.detached(priority: .userInitiated) {
             AppDiscoveryService().discover()
         }.value

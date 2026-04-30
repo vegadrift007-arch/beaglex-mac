@@ -6,18 +6,22 @@ struct AppDropZone: View {
     @State private var hover = false
 
     var body: some View {
-        VStack(spacing: 4) {
-            Image(systemName: "tray.and.arrow.down")
+        VStack(spacing: 6) {
+            Image(systemName: "arrow.down.app")
                 .font(.title2)
-            Text("Drop a .app bundle")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(hover ? Theme.accent : Theme.mute)
+            Text("Drop a .app here")
+                .font(Theme.caption)
+                .foregroundStyle(hover ? Theme.accent : Theme.mute)
         }
-        .frame(maxWidth: .infinity, minHeight: 80)
-        .background(hover ? Color.accentColor.opacity(0.1) : Color.clear)
+        .frame(maxWidth: .infinity, minHeight: 64)
+        .background(hover ? Theme.accent.opacity(0.08) : Color.clear)
         .overlay(
-            RoundedRectangle(cornerRadius: 8).strokeBorder(style: .init(lineWidth: 1, dash: [6]))
-                .foregroundStyle(.secondary)
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(
+                    hover ? Theme.accent : Theme.line,
+                    style: StrokeStyle(lineWidth: 1, dash: [5])
+                )
         )
         .onDrop(of: [.fileURL], isTargeted: $hover) { providers in
             for p in providers {

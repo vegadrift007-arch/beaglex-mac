@@ -5,10 +5,29 @@ struct MainContentView: View {
 
     var body: some View {
         NavigationSplitView {
-            SidebarView(selection: $selection)
+            VStack(alignment: .leading, spacing: 0) {
+                // Brand block at top of sidebar
+                HStack(spacing: 8) {
+                    Image(systemName: "memorychip.fill")
+                        .foregroundStyle(Theme.accent)
+                        .font(.title2)
+                    Text("RamKiller")
+                        .font(Theme.display(18))
+                        .foregroundStyle(Theme.ink)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 14)
+                .padding(.bottom, 8)
+
+                SidebarView(selection: $selection)
+            }
+            .background(Theme.bg2)
         } detail: {
             detailView
+                .background(Theme.bg)
         }
+        .preferredColorScheme(.dark)
     }
 
     @ViewBuilder
@@ -29,5 +48,6 @@ struct MainContentView: View {
 
 #Preview {
     MainContentView()
-        .frame(width: 900, height: 600)
+        .frame(width: 1100, height: 720)
+        .preferredColorScheme(.dark)
 }

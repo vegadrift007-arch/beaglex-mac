@@ -12,8 +12,6 @@ struct ProcessesView: View {
     @State private var killError: String?
 
     private var visible: [ProcessReading] {
-        // If user toggled "All processes" but fullList not yet populated, fall back to coordinator's Top 30
-        // so the UI is never empty.
         let source: [ProcessReading]
         if showAll {
             source = fullList.isEmpty ? coordinator.latestProcesses : fullList
@@ -31,46 +29,70 @@ struct ProcessesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Toolbar
-            HStack {
-                TextField("Search", text: $search)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: 220)
+            // Top bar
+            HStack(spacing: 10) {
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass").foregroundStyle(Theme.mute).font(.caption)
+                    TextField("Search processes", text: $search)
+                        .textFieldStyle(.plain)
+                        .font(Theme.bodyText)
+                }
+                .padding(.horizontal, 10).padding(.vertical, 6)
+                .background(Theme.cardBg)
+                .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Theme.line))
+                .clipShape(RoundedRectangle(cornerRadius: 7))
+                .frame(maxWidth: 280)
+
                 Toggle("All processes", isOn: $showAll)
+                    .toggleStyle(.checkbox)
+                    .foregroundStyle(Theme.inkSoft)
+                    .font(Theme.caption)
                     .onChange(of: showAll) { _, newValue in
                         if newValue { refreshFullList() }
                     }
                 Button("Refresh") { refreshFullList() }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(Theme.accent)
+                    .font(Theme.caption)
                 Spacer()
-                Text("\(visible.count) processes")
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
+                VQTag(text: "\(visible.count) procs", color: Theme.inkSoft)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(Theme.bg2)
 
-            Divider()
+            Divider().background(Theme.line)
 
-            // Master-detail
             HStack(spacing: 0) {
                 Table(visible, selection: $selectedPID) {
                     TableColumn("Name") { p in
                         HStack {
-                            Text(p.name).lineLimit(1)
+                            Text(p.name).foregroundStyle(Theme.ink).lineLimit(1)
                             Spacer()
                             killButton(for: p)
                         }
                     }
                     .width(min: 200, ideal: 260)
 
-                    TableColumn("PID") { p in Text("\(p.pid)").monospacedDigit() }
-                        .width(70)
-                    TableColumn("RSS") { p in Text(ByteFormat.mb(p.rssBytes)).monospacedDigit() }
-                        .width(80)
-                    TableColumn("User") { p in Text(p.user) }
-                        .width(90)
+                    TableColumn("PID") { p in
+                        Text("\(p.pid)").font(Theme.mono(11)).foregroundStyle(Theme.inkSoft)
+                    }.width(70)
+
+                    TableColumn("RSS") { p in
+                        Text(ByteFormat.mb(p.rssBytes))
+                            .font(Theme.mono(12))
+                            .foregroundStyle(p.rssBytes > 500_000_000 ? Theme.warn : Theme.inkSoft)
+                    }.width(80)
+
+                    TableColumn("User") { p in
+                        Text(p.user)
+                            .font(Theme.mono(11))
+                            .foregroundStyle(p.user == NSUserName() ? Theme.accent : Theme.mute)
+                    }.width(100)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .scrollContentBackground(.hidden)
+                .background(Theme.bg)
                 .contextMenu(forSelectionType: pid_t.self) { selectedPIDs in
                     if let pid = selectedPIDs.first, let p = visible.first(where: { $0.pid == pid }) {
                         Button("Kill (SIGTERM)") {
@@ -82,7 +104,7 @@ struct ProcessesView: View {
                     }
                 }
 
-                Divider()
+                Divider().background(Theme.line)
 
                 Group {
                     if let p = selected {
@@ -91,16 +113,14 @@ struct ProcessesView: View {
                         ContentUnavailableView("Select a process", systemImage: "arrow.left")
                     }
                 }
-                .frame(minWidth: 260, idealWidth: 320, maxWidth: 400)
+                .frame(minWidth: 280, idealWidth: 340, maxWidth: 420)
                 .frame(maxHeight: .infinity)
+                .background(Theme.bg2)
             }
         }
+        .background(Theme.bg)
         .navigationTitle("Processes")
-        .task(id: showAll) {
-            if showAll {
-                refreshFullList()
-            }
-        }
+        .preferredColorScheme(.dark)
         .killConfirmAlert($killContext) { process, force in
             performKill(process: process, force: force)
         }
@@ -119,8 +139,8 @@ struct ProcessesView: View {
             killContext = KillConfirmContext(process: p, force: false)
         } label: {
             Image(systemName: "xmark.circle.fill")
-                .foregroundStyle(isOwn ? .red : .orange)
-                .imageScale(.large)
+                .foregroundStyle(isOwn ? Theme.danger : Theme.warn)
+                .font(.callout)
         }
         .buttonStyle(.borderless)
         .help(isOwn ? "Kill (SIGTERM)" : "Kill via privileged helper")
@@ -132,7 +152,6 @@ struct ProcessesView: View {
         let target = "\(process.pid):\(process.name)"
 
         if process.user == NSUserName() {
-            // Own process — kill directly, no helper needed
             let result = kill(process.pid, signal)
             if result == 0 {
                 UserActionLog.shared.record(type: actionType, target: target, success: true)
@@ -142,7 +161,6 @@ struct ProcessesView: View {
                 UserActionLog.shared.record(type: actionType, target: target, success: false, error: err)
             }
         } else {
-            // System process — use helper
             Task {
                 do {
                     let result = try await HelperBridge.shared.send(.killProcess(pid: process.pid, signal: signal))

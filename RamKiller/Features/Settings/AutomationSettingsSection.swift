@@ -6,19 +6,41 @@ struct AutomationSettingsSection: View {
     @State private var savedAt: Date?
 
     var body: some View {
-        Section("Automation") {
-            VStack(alignment: .leading) {
-                Text("⚠️ Warning: Unused < \(config.warningUnusedGB, specifier: "%.1f") GB for \(config.warningHoldSeconds)s")
-                    .font(.caption)
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Automation").vqEyebrow()
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Theme.warn).font(.caption)
+                    Text("Warning when Unused < \(config.warningUnusedGB, specifier: "%.1f") GB for \(config.warningHoldSeconds)s")
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.inkSoft)
+                }
                 Slider(value: $config.warningUnusedGB, in: 0.5...8.0, step: 0.5)
+                    .tint(Theme.warn)
             }
-            VStack(alignment: .leading) {
-                Text("🔴 Critical: Unused < \(config.criticalUnusedGB, specifier: "%.1f") GB for \(config.criticalHoldSeconds)s")
-                    .font(.caption)
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Image(systemName: "flame.fill").foregroundStyle(Theme.danger).font(.caption)
+                    Text("Critical when Unused < \(config.criticalUnusedGB, specifier: "%.1f") GB for \(config.criticalHoldSeconds)s")
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.inkSoft)
+                }
                 Slider(value: $config.criticalUnusedGB, in: 0.2...4.0, step: 0.1)
+                    .tint(Theme.danger)
             }
-            Toggle("Auto-purge on threshold", isOn: $config.autoPurgeEnabled)
-            Picker("Trigger from level", selection: $config.autoPurgeAtLevel) {
+
+            Toggle(isOn: $config.autoPurgeEnabled) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Auto-purge on threshold").foregroundStyle(Theme.ink)
+                    Text("Automatically run Purge Memory when alert level reached")
+                        .font(Theme.caption).foregroundStyle(Theme.mute)
+                }
+            }
+            .toggleStyle(.switch)
+
+            Picker("From level", selection: $config.autoPurgeAtLevel) {
                 ForEach(AlertLevel.allCases, id: \.self) { Text($0.label).tag($0) }
             }
             .disabled(!config.autoPurgeEnabled)
@@ -29,14 +51,22 @@ struct AutomationSettingsSection: View {
                     coordinator.updateThresholds(config)
                     savedAt = Date()
                 }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.accent)
+
                 if let s = savedAt, Date().timeIntervalSince(s) < 3 {
-                    Text("Saved").font(.caption).foregroundStyle(.green)
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.accent)
+                        Text("Saved").font(Theme.caption).foregroundStyle(Theme.accent)
+                    }
                 }
                 Spacer()
-                Button("Reset to defaults") {
-                    config = .defaults
-                }
+                Button("Reset to defaults") { config = .defaults }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(Theme.mute)
+                    .font(Theme.caption)
             }
         }
+        .vqCard(padding: 22)
     }
 }

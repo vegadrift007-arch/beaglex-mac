@@ -8,15 +8,17 @@ struct AppDetailView: View {
     @State private var moveToTrash: Bool = true
     @State private var showConfirm: Bool = false
     @State private var lastResult: UninstallerService.UninstallResult?
+    @State private var bundleSize: Int64 = 0
+    @State private var sizeComputing: Bool = false
 
     private var totalToFree: Int64 {
         let sel = leftovers.filter { selectedLeftovers.contains($0.id) }.reduce(into: Int64(0)) { $0 += $1.size }
-        return app.bundleSize + sel
+        return bundleSize + sel
     }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 18) {
                 header
                 if SystemAppBlacklist.isProtected(app) {
                     protectedNotice
@@ -26,8 +28,9 @@ struct AppDetailView: View {
                     if let r = lastResult { resultBanner(r) }
                 }
             }
-            .padding(16)
+            .padding(24)
         }
+        .background(Theme.bg)
         .alert("Uninstall \(app.name)?", isPresented: $showConfirm) {
             Button("Cancel", role: .cancel) {}
             Button("Uninstall", role: .destructive) { Task { await performUninstall() } }
@@ -35,124 +38,198 @@ struct AppDetailView: View {
             Text("This will \(moveToTrash ? "move to Trash" : "permanently delete"):\n• \(app.bundleURL.path)\n• \(selectedLeftovers.count) leftover items\nTotal ~\(ByteFormat.mb(totalToFree))")
         }
         .task(id: app.id) { await scanLeftovers() }
+        .task(id: app.id) { await computeSize() }
     }
 
     @ViewBuilder
     private var header: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 16) {
             if let icon = app.icon {
-                Image(nsImage: icon).resizable().frame(width: 64, height: 64)
+                Image(nsImage: icon).resizable().frame(width: 72, height: 72)
             }
-            VStack(alignment: .leading) {
-                Text(app.name).font(.title2)
-                Text(app.bundleIdentifier).foregroundStyle(.secondary)
-                Text("Version \(app.version) — \(ByteFormat.mb(app.bundleSize))").font(.caption)
-                Text(app.bundleURL.path).font(.caption.monospaced()).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(app.name)
+                    .font(Theme.display(24))
+                    .foregroundStyle(Theme.ink)
+                Text(app.bundleIdentifier)
+                    .font(Theme.mono(12))
+                    .foregroundStyle(Theme.mute)
+                HStack(spacing: 12) {
+                    Label("v\(app.version)", systemImage: "tag")
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.inkSoft)
+                    if sizeComputing {
+                        HStack(spacing: 4) {
+                            ProgressView().controlSize(.mini)
+                            Text("Sizing…").font(Theme.caption).foregroundStyle(Theme.mute)
+                        }
+                    } else if bundleSize > 0 {
+                        Label(ByteFormat.mb(bundleSize), systemImage: "internaldrive")
+                            .font(Theme.caption)
+                            .foregroundStyle(Theme.inkSoft)
+                    }
+                }
+                .padding(.top, 4)
+                Text(app.bundleURL.path)
+                    .font(Theme.mono(11))
+                    .foregroundStyle(Theme.mute)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .padding(.top, 2)
             }
             Spacer()
         }
+        .vqCard(padding: 22)
     }
 
     @ViewBuilder
     private var protectedNotice: some View {
-        HStack {
-            Image(systemName: "lock.shield").foregroundStyle(.orange)
-            Text("System app — cannot be uninstalled")
+        HStack(spacing: 10) {
+            Image(systemName: "lock.shield.fill").foregroundStyle(Theme.warn).font(.title3)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Protected").font(Theme.headline()).foregroundStyle(Theme.ink)
+                Text("System app — cannot be uninstalled")
+                    .font(Theme.caption).foregroundStyle(Theme.inkSoft)
+            }
+            Spacer()
         }
-        .padding(8)
-        .background(Color.orange.opacity(0.15))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(16)
+        .background(Theme.warn.opacity(0.1))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.warn.opacity(0.3), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private var leftoversSection: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Leftovers").font(.headline)
+                Text("Leftovers").vqEyebrow()
                 Spacer()
                 if scanning { ProgressView().controlSize(.small) }
                 Button("Rescan") { Task { await scanLeftovers() } }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(Theme.accent)
+                    .font(Theme.caption)
             }
-            if leftovers.isEmpty {
+            if leftovers.isEmpty && !scanning {
                 Text("No leftovers found.")
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 8)
-            } else {
+                    .foregroundStyle(Theme.mute)
+                    .padding(.vertical, 12)
+            } else if !leftovers.isEmpty {
                 Toggle(isOn: Binding(
                     get: { selectedLeftovers.count == leftovers.count && !leftovers.isEmpty },
                     set: { isOn in
                         selectedLeftovers = isOn ? Set(leftovers.map { $0.id }) : []
                     }
                 )) {
-                    Text("Select all leftovers (\(leftovers.count) items)")
-                        .font(.caption)
+                    Text("Select all (\(leftovers.count))")
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.inkSoft)
                 }
                 .toggleStyle(.checkbox)
 
-                ForEach(leftovers) { l in
-                    HStack {
-                        Toggle("", isOn: Binding(
-                            get: { selectedLeftovers.contains(l.id) },
-                            set: { v in
-                                if v { selectedLeftovers.insert(l.id) } else { selectedLeftovers.remove(l.id) }
-                            }
-                        )).labelsHidden().toggleStyle(.checkbox)
-                        Image(systemName: l.kind.icon)
-                        VStack(alignment: .leading) {
-                            Text(l.path).font(.caption.monospaced()).lineLimit(1).truncationMode(.middle)
-                            Text(l.kind.label).font(.caption2).foregroundStyle(.secondary)
+                VStack(spacing: 0) {
+                    ForEach(leftovers) { l in
+                        leftoverRow(l)
+                        if l.id != leftovers.last?.id {
+                            Divider().background(Theme.line)
                         }
-                        Spacer()
-                        Text(ByteFormat.mb(l.size)).monospacedDigit().foregroundStyle(.secondary)
                     }
-                    .padding(.vertical, 2)
                 }
+                .vqCard(padding: 0)
             }
         }
+    }
+
+    private func leftoverRow(_ l: Leftover) -> some View {
+        HStack(spacing: 10) {
+            Toggle("", isOn: Binding(
+                get: { selectedLeftovers.contains(l.id) },
+                set: { v in
+                    if v { selectedLeftovers.insert(l.id) } else { selectedLeftovers.remove(l.id) }
+                }
+            )).labelsHidden().toggleStyle(.checkbox)
+            Image(systemName: l.kind.icon).foregroundStyle(Theme.inkSoft).frame(width: 18)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(l.path).font(Theme.mono(11)).foregroundStyle(Theme.inkSoft)
+                    .lineLimit(1).truncationMode(.middle)
+                Text(l.kind.label).font(Theme.eyebrow).foregroundStyle(Theme.mute)
+            }
+            Spacer()
+            Text(ByteFormat.mb(l.size))
+                .font(Theme.mono(12))
+                .foregroundStyle(Theme.inkSoft)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
     }
 
     private var actionRow: some View {
         HStack {
             Toggle("Move to Trash", isOn: $moveToTrash)
+                .toggleStyle(.checkbox)
+                .foregroundStyle(Theme.inkSoft)
             Spacer()
             Button {
                 showConfirm = true
             } label: {
-                Label("Uninstall (\(ByteFormat.mb(totalToFree)))", systemImage: "trash")
+                Label("Uninstall \(ByteFormat.mb(totalToFree))", systemImage: "trash.fill")
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 2)
             }
             .buttonStyle(.borderedProminent)
+            .tint(Theme.danger)
             .keyboardShortcut(.defaultAction)
         }
-        .padding(.top, 8)
     }
 
     private func resultBanner(_ r: UninstallerService.UninstallResult) -> some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Image(systemName: r.errors.isEmpty ? "checkmark.circle" : "exclamationmark.triangle")
-                    .foregroundStyle(r.errors.isEmpty ? .green : .orange)
-                Text("Uninstalled \(r.appName), freed \(ByteFormat.mb(r.bytesFreed))")
+                Image(systemName: r.errors.isEmpty ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .foregroundStyle(r.errors.isEmpty ? Theme.accent : Theme.warn)
+                Text("Uninstalled \(r.appName) — freed \(ByteFormat.mb(r.bytesFreed))")
+                    .font(Theme.headline(14))
                 Spacer()
                 Button("Dismiss") { lastResult = nil }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(Theme.inkSoft)
+                    .font(Theme.caption)
             }
             ForEach(r.errors, id: \.self) { e in
-                Text(e).font(.caption).foregroundStyle(.red)
+                Text(e).font(Theme.caption).foregroundStyle(Theme.danger).lineLimit(1)
             }
         }
-        .padding()
-        .background(Color.green.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(14)
+        .background(Theme.accent.opacity(0.08))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.accent.opacity(0.3), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private func scanLeftovers() async {
         scanning = true
         leftovers = await LeftoverScanner().scan(for: app)
-        selectedLeftovers = Set(leftovers.map { $0.id })  // default: select all
+        selectedLeftovers = Set(leftovers.map { $0.id })
         scanning = false
+    }
+
+    private func computeSize() async {
+        sizeComputing = true
+        let url = app.bundleURL
+        let size = await Task.detached(priority: .utility) {
+            AppDiscoveryService().bundleSize(at: url)
+        }.value
+        bundleSize = size
+        sizeComputing = false
     }
 
     private func performUninstall() async {
         let chosen = leftovers.filter { selectedLeftovers.contains($0.id) }
-        let result = await UninstallerService().uninstall(app: app, leftovers: chosen, moveToTrash: moveToTrash)
+        let appWithSize = AppInfo(
+            id: app.id, bundleIdentifier: app.bundleIdentifier, name: app.name,
+            version: app.version, bundleURL: app.bundleURL,
+            bundleSize: bundleSize, icon: app.icon
+        )
+        let result = await UninstallerService().uninstall(app: appWithSize, leftovers: chosen, moveToTrash: moveToTrash)
         lastResult = result
     }
 }

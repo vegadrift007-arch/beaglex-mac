@@ -7,26 +7,30 @@ struct MonitoringView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 24) {
+                heroBlock
                 SmartKillBanner()
                 statCardsRow
                 chartsSection
                 if advanced { AdvancedBreakdownView() }
             }
-            .padding(16)
+            .padding(24)
         }
+        .background(Theme.bg)
+        .preferredColorScheme(.dark)
         .navigationTitle("Memory")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 PurgeButton(style: .prominent)
             }
             ToolbarItem {
-                Picker("Window", selection: $windowHours) {
+                Picker("", selection: $windowHours) {
                     Text("1h").tag(1)
                     Text("6h").tag(6)
                     Text("24h").tag(24)
                 }
                 .pickerStyle(.segmented)
+                .labelsHidden()
             }
             ToolbarItem {
                 Toggle("Advanced", isOn: $advanced)
@@ -35,14 +39,66 @@ struct MonitoringView: View {
     }
 
     @ViewBuilder
+    private var heroBlock: some View {
+        if let m = coordinator.latestMemory {
+            HStack(alignment: .center, spacing: 32) {
+                // Big used % display
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 8) {
+                        VQPulseDot(color: pressureColor(m.pressureLevel))
+                        Text("LIVE").vqEyebrow(color: pressureColor(m.pressureLevel))
+                    }
+                    Text("\(Int(m.usedPercent.rounded()))%")
+                        .font(Theme.display(72))
+                        .foregroundStyle(Theme.ink)
+                        .monospacedDigit()
+                    Text("of \(ByteFormat.gb(m.totalBytes)) used")
+                        .font(Theme.bodyText)
+                        .foregroundStyle(Theme.mute)
+                }
+
+                Spacer()
+
+                // Pressure status box
+                VStack(alignment: .trailing, spacing: 8) {
+                    pressurePill(m.pressureLevel)
+                    Text(ByteFormat.gb(m.unusedBytes) + " free")
+                        .font(Theme.headline(20))
+                        .foregroundStyle(pressureColor(m.pressureLevel))
+                        .monospacedDigit()
+                    if m.swapOutPagesPerSec > 0 {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.up.arrow.down")
+                            Text("Swapping \(Int(m.swapOutPagesPerSec))/s")
+                        }
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.danger)
+                    }
+                }
+            }
+            .padding(28)
+            .background(
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(LinearGradient(
+                        colors: [Theme.cardBg, Theme.cardBgHover],
+                        startPoint: .topLeading, endPoint: .bottomTrailing))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .strokeBorder(Theme.lineStrong, lineWidth: 1)
+            )
+        }
+    }
+
+    @ViewBuilder
     private var statCardsRow: some View {
         if let m = coordinator.latestMemory {
-            HStack(spacing: 12) {
+            HStack(spacing: 14) {
                 StatCard(
                     title: "Used",
                     value: ByteFormat.gb(m.usedBytes),
                     subtitle: String(format: "%.0f%%", m.usedPercent),
-                    tint: .accentColor
+                    tint: Theme.accent
                 )
                 StatCard(
                     title: "Unused",
@@ -53,45 +109,64 @@ struct MonitoringView: View {
                 StatCard(
                     title: "Compressor",
                     value: ByteFormat.gb(m.compressorBytes),
-                    subtitle: nil,
-                    tint: .orange
+                    subtitle: "memory squeezed",
+                    tint: Theme.warn
                 )
                 StatCard(
                     title: "Total",
                     value: ByteFormat.gb(m.totalBytes),
-                    subtitle: nil,
-                    tint: .secondary
+                    subtitle: "physical RAM",
+                    tint: Theme.inkSoft
                 )
             }
-        } else {
-            ProgressView().padding()
         }
     }
 
     private var chartsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Memory usage").font(.headline)
+        VStack(alignment: .leading, spacing: 14) {
+            sectionHeader("Memory usage", value: "GB over time")
             MemoryAreaChart(windowHours: windowHours)
-            Text("Pressure").font(.headline)
+                .vqCard()
+
+            sectionHeader("Pressure", value: "color = level")
             PressureTimelineChart(windowHours: windowHours)
-            Text("Swap activity (pages/sec)").font(.headline)
+                .vqCard()
+
+            sectionHeader("Swap activity", value: "pages / second")
             SwapRateChart(windowHours: windowHours)
+                .vqCard()
+        }
+    }
+
+    private func sectionHeader(_ title: String, value: String) -> some View {
+        HStack {
+            Text(title).font(Theme.headline(16)).foregroundStyle(Theme.ink)
+            Spacer()
+            Text(value).vqEyebrow()
         }
     }
 
     private func pressureLabel(_ l: Int) -> String {
         switch l {
-        case 0: return "🟢 OK"
-        case 1: return "🟡 Warn"
-        default: return "🔴 Critical"
+        case 0: return "Healthy"
+        case 1: return "Under pressure"
+        default: return "Critical"
         }
     }
 
     private func pressureColor(_ l: Int) -> Color {
         switch l {
-        case 0: return .green
-        case 1: return .yellow
-        default: return .red
+        case 0: return Theme.accent
+        case 1: return Theme.warn
+        default: return Theme.danger
+        }
+    }
+
+    private func pressurePill(_ l: Int) -> some View {
+        switch l {
+        case 0: return AnyView(VQTag(text: "Healthy", color: Theme.accent))
+        case 1: return AnyView(VQTag(text: "Warn", color: Theme.warn))
+        default: return AnyView(VQTag(text: "Critical", color: Theme.danger))
         }
     }
 }
