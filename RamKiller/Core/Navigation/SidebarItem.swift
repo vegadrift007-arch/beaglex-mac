@@ -33,7 +33,7 @@ enum SidebarItem: String, CaseIterable, Identifiable, Hashable {
         case .cacheCleaner: return "trash"
         case .largeFiles:   return "doc.zipper"
         case .uninstaller:  return "shippingbox"
-        case .launchItems:  return "rocket"
+        case .launchItems:  return "powerplug"
         case .settings:     return "gearshape"
         }
     }
