@@ -64,11 +64,5 @@ public final class LaunchItemManager {
     }
 }
 
-extension Result {
-    func get() throws -> Success {
-        switch self {
-        case .success(let v): return v
-        case .failure(let e): throw e
-        }
-    }
-}
+// Note: Swift stdlib's Result already has a `.get()` method that does exactly this.
+// Previously we had a duplicate extension here that shadowed it — removed.

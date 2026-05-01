@@ -3,14 +3,17 @@ import Charts
 import SwiftData
 
 struct PressureTimelineView: View {
-    @Query private var snapshots: [MemorySnapshot]
+    @Query(sort: \MemorySnapshot.timestamp) private var allSnapshots: [MemorySnapshot]
     let days: Int
 
     init(days: Int) {
         self.days = days
-        let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date())!
-        let predicate = #Predicate<MemorySnapshot> { $0.timestamp >= cutoff }
-        _snapshots = Query(filter: predicate, sort: \MemorySnapshot.timestamp)
+    }
+
+    /// Filter at body-time so cutoff is always fresh.
+    private var snapshots: [MemorySnapshot] {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date.distantPast
+        return allSnapshots.filter { $0.timestamp >= cutoff }
     }
 
     private struct Bucket: Identifiable {

@@ -4,6 +4,7 @@ struct SmartKillBanner: View {
     @EnvironmentObject private var coordinator: SamplingCoordinator
     @State private var dismissed: Set<pid_t> = []
     @State private var error: String?
+    @State private var showConfirm: Bool = false
 
     private var candidates: [ProcessReading] {
         SmartKillAnalyzer().candidates(from: coordinator.latestProcesses)
@@ -18,7 +19,7 @@ struct SmartKillBanner: View {
                     Text("\(candidates.count) idle high-memory process\(candidates.count > 1 ? "es" : "")")
                         .font(.headline)
                     Spacer()
-                    Button("Kill all") { Task { await killAll() } }
+                    Button("Kill all") { showConfirm = true }
                         .buttonStyle(.borderedProminent)
                     Button("Dismiss") {
                         candidates.forEach { dismissed.insert($0.pid) }
@@ -40,6 +41,12 @@ struct SmartKillBanner: View {
             .padding(12)
             .background(Color.yellow.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 8))
+            .alert("Kill \(candidates.count) processes?", isPresented: $showConfirm) {
+                Button("Cancel", role: .cancel) {}
+                Button("Kill all", role: .destructive) { Task { await killAll() } }
+            } message: {
+                Text(candidates.prefix(10).map { "• \($0.name) (\(ByteFormat.mb($0.rssBytes)))" }.joined(separator: "\n"))
+            }
         }
     }
 
@@ -48,6 +55,9 @@ struct SmartKillBanner: View {
             let r = kill(p.pid, SIGTERM)
             if r != 0 {
                 error = "Failed to kill \(p.name): \(String(cString: strerror(errno)))"
+                UserActionLog.shared.record(type: "smart_kill", target: "\(p.pid):\(p.name)", success: false, error: error)
+            } else {
+                UserActionLog.shared.record(type: "smart_kill", target: "\(p.pid):\(p.name)", success: true)
             }
         }
     }

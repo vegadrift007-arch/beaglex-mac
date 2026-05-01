@@ -21,9 +21,6 @@ public final class MemoryService {
         let inactive    = Int64(stats.inactive_count) * Int64(pageSize)
         let speculative = Int64(stats.speculative_count) * Int64(pageSize)
         let compressor  = Int64(stats.compressor_page_count) * Int64(pageSize)
-        let purgeable   = Int64(stats.purgeable_count) * Int64(pageSize)
-        let external    = Int64(stats.external_page_count) * Int64(pageSize)
-        let fileBacked  = Int64(stats.external_page_count) * Int64(pageSize)
         let unused      = Int64(stats.free_count + stats.speculative_count) * Int64(pageSize)
 
         let used = total - unused
@@ -50,9 +47,6 @@ public final class MemoryService {
             inactiveBytes: inactive,
             speculativeBytes: speculative,
             compressorBytes: compressor,
-            purgeableBytes: purgeable,
-            externalBytes: external,
-            fileBackedBytes: fileBacked,
             swapInPagesPerSec: max(0, swapInRate),
             swapOutPagesPerSec: max(0, swapOutRate),
             pressureLevel: pressureLevel()

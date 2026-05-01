@@ -13,9 +13,6 @@ public struct MemoryReading: Sendable, Equatable {
     public let inactiveBytes: Int64
     public let speculativeBytes: Int64
     public let compressorBytes: Int64
-    public let purgeableBytes: Int64
-    public let externalBytes: Int64
-    public let fileBackedBytes: Int64
 
     /// Per-second rate from kernel page counters (compared against last reading).
     public let swapInPagesPerSec: Double

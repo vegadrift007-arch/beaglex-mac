@@ -2,14 +2,16 @@ import SwiftUI
 import SwiftData
 
 struct CulpritProcessesView: View {
-    @Query private var snapshots: [ProcessSnapshot]
+    @Query(sort: \ProcessSnapshot.timestamp) private var allSnapshots: [ProcessSnapshot]
     let days: Int
 
     init(days: Int) {
         self.days = days
-        let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date())!
-        let predicate = #Predicate<ProcessSnapshot> { $0.timestamp >= cutoff }
-        _snapshots = Query(filter: predicate, sort: \ProcessSnapshot.timestamp)
+    }
+
+    private var snapshots: [ProcessSnapshot] {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date.distantPast
+        return allSnapshots.filter { $0.timestamp >= cutoff }
     }
 
     private struct ProcAgg: Identifiable {

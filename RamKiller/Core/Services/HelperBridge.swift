@@ -21,6 +21,9 @@ final class HelperBridge {
     }
 
     func send(_ command: HelperCommand) async throws -> HelperResult {
+        // Refresh status before sending — user may have disabled the helper externally
+        // (System Settings → Login Items & Extensions) without our app knowing.
+        HelperManager.shared.refresh()
         guard HelperManager.shared.status == .enabled else {
             throw BridgeError.helperNotInstalled
         }

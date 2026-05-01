@@ -14,13 +14,11 @@ final class RetentionServiceTests: XCTestCase {
             timestamp: now.addingTimeInterval(-25 * 3600),
             totalBytes: 1, usedBytes: 0, unusedBytes: 0, wiredBytes: 0,
             activeBytes: 0, inactiveBytes: 0, speculativeBytes: 0, compressorBytes: 0,
-            purgeableBytes: 0, externalBytes: 0, fileBackedBytes: 0,
             swapInPagesPerSec: 0, swapOutPagesPerSec: 0, pressureLevel: 0)
         let newReading = MemoryReading(
             timestamp: now,
             totalBytes: 1, usedBytes: 0, unusedBytes: 0, wiredBytes: 0,
             activeBytes: 0, inactiveBytes: 0, speculativeBytes: 0, compressorBytes: 0,
-            purgeableBytes: 0, externalBytes: 0, fileBackedBytes: 0,
             swapInPagesPerSec: 0, swapOutPagesPerSec: 0, pressureLevel: 0)
         ctx.insert(MemorySnapshot(reading: oldReading))
         ctx.insert(MemorySnapshot(reading: newReading))

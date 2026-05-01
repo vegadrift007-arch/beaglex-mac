@@ -9,7 +9,7 @@ final class ThresholdEngineTests: XCTestCase {
             usedBytes: Int64((36 - unusedGB) * 1_073_741_824),
             unusedBytes: Int64(unusedGB * 1_073_741_824),
             wiredBytes: 0, activeBytes: 0, inactiveBytes: 0, speculativeBytes: 0,
-            compressorBytes: 0, purgeableBytes: 0, externalBytes: 0, fileBackedBytes: 0,
+            compressorBytes: 0,
             swapInPagesPerSec: 0, swapOutPagesPerSec: swapOut, pressureLevel: 0
         )
     }

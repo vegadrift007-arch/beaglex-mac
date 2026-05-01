@@ -3,12 +3,16 @@ import Charts
 import SwiftData
 
 struct SwapRateChart: View {
-    @Query(sort: \MemorySnapshot.timestamp) private var snapshots: [MemorySnapshot]
+    @Query(sort: \MemorySnapshot.timestamp) private var allSnapshots: [MemorySnapshot]
+    let windowHours: Int
 
     init(windowHours: Int = 1) {
+        self.windowHours = windowHours
+    }
+
+    private var snapshots: [MemorySnapshot] {
         let cutoff = Date().addingTimeInterval(-Double(windowHours) * 3600)
-        let predicate = #Predicate<MemorySnapshot> { $0.timestamp >= cutoff }
-        _snapshots = Query(filter: predicate, sort: \MemorySnapshot.timestamp)
+        return allSnapshots.filter { $0.timestamp >= cutoff }
     }
 
     var body: some View {
