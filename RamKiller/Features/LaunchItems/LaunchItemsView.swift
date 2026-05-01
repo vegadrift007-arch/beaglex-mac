@@ -60,6 +60,8 @@ struct LaunchItemsView: View {
             }
         }
         .navigationTitle("Launch Items")
+        .toolbarBackground(Theme.bg, for: .windowToolbar)
+        .toolbarBackground(.visible, for: .windowToolbar)
         .task { await load() }
     }
 

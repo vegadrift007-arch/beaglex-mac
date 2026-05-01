@@ -55,5 +55,7 @@ struct AutomationView: View {
             }
         }
         .navigationTitle("Automation")
+        .toolbarBackground(Theme.bg, for: .windowToolbar)
+        .toolbarBackground(.visible, for: .windowToolbar)
     }
 }

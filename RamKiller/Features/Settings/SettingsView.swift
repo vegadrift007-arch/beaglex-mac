@@ -72,6 +72,8 @@ struct SettingsView: View {
             .frame(maxWidth: 720)
         }
         .background(Theme.bg)
+        .toolbarBackground(Theme.bg, for: .windowToolbar)
+        .toolbarBackground(.visible, for: .windowToolbar)
         .navigationTitle("Settings")
         .onAppear {
             if launchAtLogin && LoginItemService.shared.status != .enabled {

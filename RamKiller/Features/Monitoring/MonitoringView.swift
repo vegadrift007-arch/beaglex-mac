@@ -17,6 +17,8 @@ struct MonitoringView: View {
             .padding(24)
         }
         .background(Theme.bg)
+        .toolbarBackground(Theme.bg, for: .windowToolbar)
+        .toolbarBackground(.visible, for: .windowToolbar)
         .navigationTitle("Memory")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {

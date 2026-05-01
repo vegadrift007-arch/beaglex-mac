@@ -33,5 +33,7 @@ struct LargeFilesView: View {
             }
         }
         .navigationTitle("Large Files")
+        .toolbarBackground(Theme.bg, for: .windowToolbar)
+        .toolbarBackground(.visible, for: .windowToolbar)
     }
 }

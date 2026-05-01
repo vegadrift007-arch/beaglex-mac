@@ -49,6 +49,8 @@ struct UninstallerView: View {
             .background(Theme.bg)
         }
         .navigationTitle("Uninstaller")
+        .toolbarBackground(Theme.bg, for: .windowToolbar)
+        .toolbarBackground(.visible, for: .windowToolbar)
         .task { await loadApps() }
     }
 

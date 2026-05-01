@@ -82,6 +82,8 @@ struct CacheCleanerView: View {
             }
         }
         .navigationTitle("Cache Cleaner")
+        .toolbarBackground(Theme.bg, for: .windowToolbar)
+        .toolbarBackground(.visible, for: .windowToolbar)
         .task { await scan() }
         .alert("Clean \(ByteFormat.mb(selectedTotal))?", isPresented: $showConfirm) {
             Button("Cancel", role: .cancel) {}

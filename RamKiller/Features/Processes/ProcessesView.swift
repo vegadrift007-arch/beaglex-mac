@@ -119,6 +119,8 @@ struct ProcessesView: View {
             }
         }
         .background(Theme.bg)
+        .toolbarBackground(Theme.bg, for: .windowToolbar)
+        .toolbarBackground(.visible, for: .windowToolbar)
         .navigationTitle("Processes")
         .killConfirmAlert($killContext) { process, force in
             performKill(process: process, force: force)
