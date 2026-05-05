@@ -20,3 +20,12 @@ Package.resolved
 *.dSYM.zip
 *.ipa
 *.app
+
+# Swift Package Manager build artifacts
+Shared/.build/
+**/.build/
+**/ModuleCache/
+*.pcm
+
+# macOS DMG (built artifact, large)
+*.dmg
