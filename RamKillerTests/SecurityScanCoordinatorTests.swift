@@ -4,6 +4,13 @@ import XCTest
 
 @MainActor
 final class SecurityScanCoordinatorTests: XCTestCase {
+    override func tearDown() {
+        super.tearDown()
+        UserDefaults.standard.removeObject(forKey: "security.ignoredIDs")
+        UserDefaults.standard.removeObject(forKey: "security.autoScanInterval")
+        UserDefaults.standard.removeObject(forKey: "security.lastScanDate")
+    }
+
     func testInitialStateIsIdle() {
         let c = SecurityScanCoordinator()
         XCTAssertEqual(c.scanState, .idle)
